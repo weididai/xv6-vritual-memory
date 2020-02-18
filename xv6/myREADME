@@ -1,0 +1,13 @@
+Null Pointer Exception:
+In this part, we change the following file to make the deferencing of null pointer be a fault
+1. exec.c, we let the program loads at PGSIZE
+2. vm.c, copyvum method, we let the copy from PGSIZE, so we dont need to copy the empty page
+3. proc.c, in userinit method, we let eip points to the begining of PGSIZE, and let p->sz points to PGSIZE << 1, which means pointing to one more PGSIZE, and esp which is the stack pointer set to p-> sz
+4. syscall.c, we let fetchint, fetchstr and argptr funtion to return -1 if the address is pointed to the first page, which means address is less than PGSIZE
+
+
+READ-Only memory:
+In this part, we change the protection bits of parts of the page table to be read-only, thus preventing such over-writes, and also be able to change them back, by adding to system call: int mprotect(void *addr, int len) and int munprotect(void *addr, int len)
+1. sysproc.c, we add those two system call in this file and check if the len <= 0 or the addr is not page aligned, then we return -1. And in this function, we also call another method in vm.c
+2. vm.c, we add two functions mprotectHelper and munprotectHelper. In those two function, we check if the address is within the address space, if not, we return -1. And those two function also change the protection bits, which PTE_W and let the hardware know the change by using lcrs(). 
+In addtion, in the file, we change copyvum method, in order to let the child inherit the protection bit of the parent's page. 
